@@ -3,8 +3,10 @@ from sys import argv
 import re
 from threading import Thread, Lock
 
+# questa è la funzione che rappresenta il thread  di gestione della richiesta
 def connection_manager_thread(addr, conn):
     print('Client: {}'.format(addr))
+    # variabile che mi serve per capire se devo inviare o meno i dati al client ed è locale al thread quindi diversa per ogni thread (non è condivisa tra i client)
     toggle = True
     while True:
         data = conn.recv(1024)
@@ -28,10 +30,13 @@ if __name__ == '__main__':
     TCPServerSocket = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM)
     TCPServerSocket.bind((localIP, localPORT))
 
+    # ogni volta che arriva una richiesta c'è un processo principale che avvia un thread che si occupa di gestire la richiesta, 
+    # ogni richiesta equivale a un thread di gestione avviato
     while True:
         print('TCP Server UP ({},{}), waiting for connections ...'.format(localIP, localPORT))
         TCPServerSocket.listen()
         conn, addr = TCPServerSocket.accept()
+        # creo il thread che deve gestire la connessione e lo avvio 
         Thread(target=connection_manager_thread, args=(addr, conn),).start()
     
     TCPServerSocket.close()
