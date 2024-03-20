@@ -5,6 +5,7 @@ import re
 import json
 
 def decodeJoin(addr, mess):
+    # Va a cercare la presenza di un json nel messaggio
     result = re.search('(\{[a-zA-Z0-9\"\'\:\.\, ]*\})' , mess)
     if bool(result):
         logging.debug('RE GROUP(1) {}'.format(result.group(1)))
@@ -44,13 +45,14 @@ def decodeMessage(addr, mess):
             action['command'] = 'unknown'
     else:
         action = {}
-        action['command'] = 'invalid'
+        action['command'] = 'invalid'    
 
     logging.debug('ACTION: {}'.format(action))
 
     return action
 
 def updateRingJoin(action, listOfNodes):
+    # deve aggiungere un nodo alla lista di nodi
     logging.debug('RING JOIN UPDATE')
     node = {}
 
@@ -80,7 +82,7 @@ def updateRingJoin(action, listOfNodes):
 def updateRingLeave(action, listOfNodes):
     logging.debug('RING LEAVE UPDATE')
 
-    #
+    # creo dizionario con chiave id e valore nodo
     dictOfNodes = {eNode['id'] : eNode for eNode in listOfNodes}
     
     if action['id'] not in dictOfNodes:
@@ -100,9 +102,11 @@ def updateRingLeave(action, listOfNodes):
     return True
 
 def updateRing(action, listOfNodes, oracleSocket):
+    # può dover compiere una delle seguenti azioni: join, leave
     logging.info('RING UPDATE: {}'.format(action))
     
     try:
+        # result è risposta booleana che ottengo quando chiamo una delle due funzioni lambda 
         result = {
             'join'  : lambda param1,param2 : updateRingJoin(param1, param2),
             'leave' : lambda param1,param2 : updateRingLeave(param1, param2)
@@ -111,13 +115,17 @@ def updateRing(action, listOfNodes, oracleSocket):
         result = False
         return result
 
+    # questa informazione è inviata a tutti i nodi della lista
     sendConfigurationToAll(listOfNodes, oracleSocket)
     
     return result
 
 def sendConfigurationToAll(listOfNodes, oracleSocket):
     N = len(listOfNodes)
+    # ciclo sulla listofNodes che è stata aggiornata con il join o il leave di un nodo 
     for idx, node in enumerate(listOfNodes):
+        # per ogni nodo devo inviare un messaggio di update al nodo successivo nella lista
+        # se idx è uguale a N-1 (ultimo) allora il nodo successivo è il primo della lista altrimenti è il nodo successivo
         if idx == N-1:
             nextNode = listOfNodes[0]
         else:
@@ -126,7 +134,9 @@ def sendConfigurationToAll(listOfNodes, oracleSocket):
         #        node['id'],     node['addr'],     node['port'], \
         #        nextNode['id'], nextNode['addr'], nextNode['port']))
 
+        # prendo indirizzo e porta del nodo da contattare
         addr, port = node['addr'], int(node['port'])
+        # creo il messaggio da inviare al nodo e metto nel messaggio l'id del nodo e l'id del nodo successivo cosi vede se il suo successivo è cambiato o è rimasto lo stesso
         message = {}
         message['id'] = node['id']
         message['nextNode'] = nextNode
@@ -156,6 +166,7 @@ if __name__ == '__main__':
         logging.info('REQUEST FROM {}'.format(addr))
         logging.info('REQUEST: {}'.format(dmess))
 
+        # la prima cosa da fare è decodificare il messaggio quindi chiama la funzione decodeMessage
         action = decodeMessage(addr, dmess)
         updateRing(action, listOfNodes, oracleSocket)
 

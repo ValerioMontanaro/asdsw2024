@@ -8,6 +8,9 @@ import socket
 import logging
 import json
 
+# i client possono comunicare solo nella direzione del ring e per far si che vada avanti il messaggio devono conoscere il nodo successivo 
+# ed essere quindi aggiornati sui cambaimenti nel ring
+
 def sendDataToRing(clientSocket, nextNode, idSorgente, idDestinazione, mess):
     # PROTOTIPO MESSAGGIO: [DATA] JSON MESSAGGIO
     messaggio = {}
@@ -113,10 +116,13 @@ def decodeData(clientSocket, currNode, nextNode, mess, prompt):
         idSorgente = message['idSorgente']
         idDestinazione = message['idDestinazione']
         payload = message['payload']
+        # Se il messaggio è per me (destinazione sono io) lo stampo, altrimenti lo inoltro
         if idDestinazione == currNode['id']:
             prompt.echo_message('{}->{}: {}'.format(idSorgente, idDestinazione, payload))
+        # Se il messaggio era stato inviato da me e ha completato il giro tornando a me lo scarto
         elif idSorgente == currNode['id']:
             logging.debug('DROPPING MESSAGE')
+        # Altrimenti lo inoltro (se non sono io il destinatario e non sono io il mittente)
         else:
             addr = nextNode['addr']
             port = int(nextNode['port'])
@@ -143,6 +149,9 @@ def receiveMessage(clientSocket, currNode, nextNode, prompt):
 
 if __name__ == '__main__':
 
+    # Parametri di configurazione: 
+    #IP e PORTA dell'oracolo (queste servono per comunicare con l'oracolo), 
+    #IP e PORTA del client (queste ultime due sono scelte dall'utente servono perchè l'oracolo deve sapere a chi icomunicare i join e leave) 
     oracleIP     = argv[1]
     oraclePORT   = int(argv[2])
     clientIP     = argv[3]
@@ -164,6 +173,7 @@ if __name__ == '__main__':
     join(clientSocket, currNode, nextNode, oracleIP, oraclePORT)
     logging.debug('NEW CONFIGURATION:\n\t{}\n\t{}'.format(currNode, nextNode))
 
+    # Creazione prompt (shell interattiva in cui l'utente può inviare messaggi al ring e riceverli dal ring) 
     prompt = RingPrompt()
     prompt.conf(clientSocket, nextNode, currNode['id'])
 
