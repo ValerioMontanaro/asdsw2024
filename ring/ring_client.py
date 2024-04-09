@@ -67,14 +67,21 @@ def managePrompt(prompt):
     prompt.cmdloop()
 
 def join(clientSocket, currNode, nextNode, oracleIP, oraclePORT):
+    # crea il messaggio di join con il comando JOIN e il json con i dati del nodo corrente
     mess = '[JOIN] {}'.format(json.dumps(currNode))
+    # stampa il messaggio di join
     logging.debug('JOIN MESSAGE: {}'.format(mess))
+    # invia il messaggio di join all'oracolo
     clientSocket.sendto(mess.encode(), (oracleIP, oraclePORT))
-    mess, addr = clientSocket.recvfrom(1024)
-    mess = mess.decode('utf-8')
+    # riceve la risposta dall'oracolo che contiene in mess il json con i dati del nodo successivo e l'id del nodo corrente
+    mess = clientSocket.recvfrom(1024)
+    # decodifica il messaggio ricevuto dall'oracolo che era in formato byte e lo trasforma in stringa utf-8 (il messaggio è in formato json)
+    mess = mess.decode('utf-8') 
     logging.debug('RESPONSE: {}'.format(mess))
-	
+
+	# cerca il json nel messaggio ricevuto
     result = re.search('(\{[a-zA-Z0-9\"\'\:\.\,\{\} ]*\})', mess)
+    # se trova il json nel messaggio lo trasforma in dizionario e lo mette in action
     if bool(result):
         logging.debug('RE GROUP(1) {}'.format(result.group(1)))	
         action = json.loads(result.group(1))
@@ -130,12 +137,14 @@ def decodeData(clientSocket, currNode, nextNode, mess, prompt):
 
 
 def receiveMessage(clientSocket, currNode, nextNode, prompt):
+    # Gli arriva un messaggio e lo decodifica
     mess, addr = clientSocket.recvfrom(1024)
     mess = mess.decode('utf-8')
     logging.debug('MESSAGE FROM {}:{} = {}'.format(addr[0], addr[1], mess))
 
     action = False
 
+    # Se il messaggio è un comando tra parentesi quadre maiuscole allora lo esegue
     result = re.search('^\[([A-Z]*)\]', mess)
     if bool(result):
         command = result.group(1)
@@ -150,8 +159,8 @@ def receiveMessage(clientSocket, currNode, nextNode, prompt):
 if __name__ == '__main__':
 
     # Parametri di configurazione: 
-    #IP e PORTA dell'oracolo (queste servono per comunicare con l'oracolo), 
-    #IP e PORTA del client (queste ultime due sono scelte dall'utente servono perchè l'oracolo deve sapere a chi icomunicare i join e leave) 
+    #IP e PORTA dell'oracolo (queste servono per comunicare con l'oracolo per fare join e leave di me stesso nel ring), 
+    #IP e PORTA del client (queste ultime due sono scelte dall'utente servono perchè l'oracolo deve sapere a chi comunicare i join e leave fatti dai client diversi da me) 
     oracleIP     = argv[1]
     oraclePORT   = int(argv[2])
     clientIP     = argv[3]
@@ -179,6 +188,6 @@ if __name__ == '__main__':
 
     Thread(target=managePrompt, args=(prompt,)).start()
 
-    # Gestione comunicazione Ring
+    # Gestione comunicazione Ring che riceve messaggi e li inoltra o li stampa a seconda del contenuto del messaggio
     while True:
         receiveMessage(clientSocket, currNode, nextNode, prompt)
