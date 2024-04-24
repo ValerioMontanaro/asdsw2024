@@ -32,7 +32,7 @@ def api_all():
     return jsonify(students)
 
 # Permette di accedere ad un singolo studente tramite il suo id sia in GET che in POST
-@app.route('/api/v1/resources/students', methods=['GET', 'POST'])
+@app.route('/api/v1/resources/students', methods=['GET', 'POST', 'DELETE'])
 def app_id():
 
     # se il metodo è GET
@@ -53,7 +53,7 @@ def app_id():
         return jsonify(results)
     
     # se il metodo è POST
-    else:
+    elif request.method == 'POST':
         student = {}
        
         student['id'] = int(request.args['id'])
@@ -65,5 +65,20 @@ def app_id():
         students.append(student)
 
         return jsonify(student)
+    
+    else:
+        
+        if 'id' in request.args:
+            id_ = int(request.args['id'])
+        else:
+            return '''<h2>ERROR: indicare un id</h2>'''
+
+        for student in students:
+            if student['id'] == id_:
+                to_delete = student
+
+        students.remove(to_delete)
+
+        return jsonify(students)
 
 app.run()
