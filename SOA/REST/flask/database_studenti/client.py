@@ -19,6 +19,7 @@ print(response.json())
 
 
 query = {'id': 3}
+# passo il parametro id=3 come query string alla richiesta GET perchè il server lo legga ma rimanga privato all'utente e non venga visualizzato nell'url
 response = requests.get(address + '/api/v1/resources/students', params=query)
 print('-'*80)
 print(json.dumps(response.json(), indent=4, sort_keys=True))
@@ -36,5 +37,10 @@ print('-'*80)
 print(json.dumps(response.json(), indent=4, sort_keys=True))
 
 response = requests.get(address + '/api/v1/resources/students/all')
+print('-'*80)
+print(json.dumps(response.json(), indent=4, sort_keys=True))
+
+query = {'id': 2}
+response = requests.get(address + '/api/v1/resources/students', params=query)
 print('-'*80)
 print(json.dumps(response.json(), indent=4, sort_keys=True))
