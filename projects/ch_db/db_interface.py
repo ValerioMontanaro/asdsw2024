@@ -3,6 +3,8 @@ import requests
 
 app = Flask(__name__)
 
+# questo file implementa il server che si occupa di fare da intermediario tra il client e i server di backend che contengono i dati cioè i database                                                                                                        
+
 # List of backend servers
 servers = [
     #"http://localhost:6000/",
